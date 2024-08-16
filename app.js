@@ -1,16 +1,25 @@
 const express = require('express');
 const puppeteer = require('puppeteer');
 const xmlbuilder = require('xmlbuilder');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const cors = require('cors');
+const bodyParser = require('body-parser');
 
 const app = express();
-app.use(express.json()); // Para parsear JSON en el body de la solicitud
+
+// Configuración de seguridad y middlewares
+app.use(helmet()); // Añade cabeceras de seguridad
+app.use(morgan('combined')); // Logger de solicitudes HTTP
+app.use(cors()); // Habilita CORS
+app.use(bodyParser.json()); // Parsear JSON en el body de las solicitudes
 
 async function extractDataAndGenerateXML() {
-    const browser = await puppeteer.launch({ 
+    let browser = await puppeteer.launch({ 
         headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
-    const page = await browser.newPage();
+    let page = await browser.newPage();
 
     try {
         console.log('Navegando a la URL...');
@@ -46,7 +55,7 @@ async function extractDataAndGenerateXML() {
             const containerSelector = 'div.ag-cell-value[aria-colindex="7"][role="gridcell"]';
             console.log('Esperando el elemento que contiene el texto...');
             try {
-                await page.waitForSelector(containerSelector, { timeout: 60000 });
+                await page.waitForSelector(containerSelector, { timeout: 15000 });
 
                 console.log('Extrayendo el texto del elemento...');
                 const extractedText = await page.$eval(`${containerSelector} a`, element => element.textContent.trim());
@@ -66,6 +75,13 @@ async function extractDataAndGenerateXML() {
         let result = await getDataFromDashboard('https://avl.easytrack.com.ar/dashboard/1000');
         if (!result.success) {
             result = await getDataFromDashboard('https://avl.easytrack.com.ar/dashboard/1007');
+            if (!result.success) {
+                console.log('Recargando el navegador y esperando 60 segundos...');
+                await page.reload({ waitUntil: ['domcontentloaded'] });
+                await page.waitForTimeout(15000);
+                result = await getDataFromDashboard('https://avl.easytrack.com.ar/dashboard/1007');
+            }
+
             if (result.success) {
                 result.text = `El bus se encuentra detenido en ${result.text}`;
             }
