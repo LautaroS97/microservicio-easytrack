@@ -1,0 +1,17 @@
+{
+  "name": "microservicio-easytrack",
+  "version": "1.0.0",
+  "description": "Proyecto Node.js para extraer datos y generar XML desplegado en Railway",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "puppeteer": "^23.1.0",
+    "xmlbuilder": "^15.1.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
